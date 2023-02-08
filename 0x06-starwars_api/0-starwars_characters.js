@@ -1,19 +1,35 @@
 #!/usr/bin/node
 
-const util = require('util');
 const request = require('request');
+const { exit } = require('process');
+const filmId = process.argv[2];
+const api = `https://swapi-api.hbtn.io/api/films/${filmId}/`;
 
-if (process.argv[2] === undefined) {
-  console.log('Usage: node <FILENAME> <id>');
-} else {
-  (async () => {
-    const requestPromise = util.promisify(request);
-    const url = 'https://swapi-api.hbtn.io/api/films/' + process.argv[2];
-    const body = (await requestPromise(url)).body;
-    const abc = JSON.parse(body).characters;
-    for (let i = 0; i < abc.length; i++) {
-      const char = (await requestPromise(abc[i])).body;
-      console.log(JSON.parse(char).name);
+if (filmId === undefined) {
+  console.log('Usage: node 0-starwars_characters.js <film id>');
+  exit();
+}
+
+// GET film data
+request(api, (error, response, body) => {
+  if (error) {
+    console.log('error', error);
+  } else {
+    const data = JSON.parse(body).characters;
+    printSorted(data, 0);
+  }
+});
+
+// GET each character in sorted order
+function printSorted (chars, n) {
+  if (n === chars.length) { return; }
+  request(chars[n], (error, response, actors) => {
+    if (error) {
+      console.log('error', error);
+    } else {
+      const actor = JSON.parse(actors);
+      console.log(actor.name);
+      printSorted(chars, n + 1);
     }
-  })();
+  });
 }
